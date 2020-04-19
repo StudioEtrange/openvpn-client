@@ -278,7 +278,6 @@ route6="$dir/.firewall6"
 [[ "${VPN_AUTH:-""}" ]] && eval vpn_auth $(sed 's/^/"/; s/$/"/; s/;/" "/g' <<< $VPN_AUTH)
 [[ "${CERT_AUTH:-""}" ]] && cert_auth "$CERT_AUTH"
 [[ "${DNS:-""}" ]] && dns
-[[ "${GROUPID:-""}" =~ ^[0-9]+$ ]] && groupmod -g $GROUPID -o vpn
 [[ "${FIREWALL:-""}" || -e $route ]] && firewall "${FIREWALL:-""}"
 while read i; do
     return_route6 "$i"
