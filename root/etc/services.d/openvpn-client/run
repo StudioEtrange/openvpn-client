@@ -3,5 +3,10 @@
 echo "Start OpenVPN Client."
 echo "Start options : ${RUN_OPTS}"
 
-[ "${RUN_OPTS}" = "" ] && exec s6-setuidgid abc /app/openvpn.sh
-    || exec s6-setuidgid abc /app/openvpn.sh ${RUN_OPTS}
+if [ "${RUN_OPTS}" = "" ]; then
+    exec s6-setuidgid abc /app/openvpn.sh
+else
+    exec s6-setuidgid abc /app/openvpn.sh ${RUN_OPTS}
+fi
+
+
