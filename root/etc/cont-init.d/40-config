@@ -3,4 +3,4 @@
 ln -s /app/openvpn.sh /usr/local/bin/openvpn.sh
 
 # permissions
-chown -R abc:abc /vpn
+#chown -R abc:abc /vpn

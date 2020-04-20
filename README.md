@@ -146,6 +146,11 @@ the second container (that's what `--net=container:vpn` does).
                     optional args:
                     [port] to use, instead of default
                     [proto] to use, instead of udp (IE, tcp)
+        -V '<[conf][;cert]>' Specify OpenVPN configuration and ca cert file
+                    required arg:
+                    optional args:
+                    [conf] file inside /vpn to use for openvpn configuration
+                    [cert] file inside /vpn to use as cert file with ca
 
 The 'command' (if provided and valid) will be run instead of openvpn.sh
 
@@ -163,6 +168,7 @@ ENVIRONMENT VARIABLES
  * `ROUTE` - As above (-r) add a route to allow replies to your private network
  * `TZ` - Set a timezone, IE `EST5EDT`
  * `VPN` - As above (-v) setup a VPN connection
+ * `VPN_FILES` - As above (-V) specify configuration and ca cert file
  * `VPN_AUTH` - As above (-a) provide authentication to vpn server
  * `VPNPORT` - As above (-p) setup port forwarding (See NOTE below)
  * `PUID` - Set the user UID running openvpn client
@@ -177,6 +183,18 @@ ENVIRONMENT VARIABLES
 
 Any of the commands can be run at creation with `docker run` or later with
 `docker exec -it openvpn openvpn.sh` (as of version 1.3 of docker).
+
+### Full options
+
+Example with all current options providing myovpn.ovpn and myown-ca.crt in /some/path
+and vpn authentification
+
+    sudo docker run -it --rm --cap-add=NET_ADMIN --name vpn \
+    -v /some/path:/vpn --device /dev/net/tun \
+    -e PUID=$(id -u) -e PGID=$(id -g) -e TZ=Europe/London -e "DNS=1" \
+    -e "VPN_AUTH=username;password" -e "VPN_FILES=myovpn.ovpn;myown-ca.crt" \
+    -e "OTHER_ARGS=--redirect-gateway def1" \
+    dperson/openvpn
 
 ### Setting the Timezone
 
@@ -207,6 +225,17 @@ Or you can store it in the container:
                 -d dperson/openvpn-client tee /vpn/vpn-ca.crt \
                 >/dev/null
     sudo docker restart vpn
+
+### VPN select configuration files
+
+All files must be specified relative to `/vpn`
+
+    ls /some/path/myown-ca.crt
+    ls /some/path/myovpn.ovpn
+    sudo docker run -it --cap-add=NET_ADMIN --device /dev/net/tun --name vpn \
+                -v /some/path:/vpn \
+                -e "VPN_FILES=myovpn.ovpn;myown-ca.crt" \
+                dperson/openvpn-client 
 
 ### Firewall
 

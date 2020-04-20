@@ -1,12 +1,12 @@
 #!/usr/bin/with-contenv bash
 
 echo "Start OpenVPN Client."
-echo "Start options : ${RUN_OPTS}"
 
+# NOTE : openvpn client binary must be run with root
 if [ "${RUN_OPTS}" = "" ]; then
-    exec s6-setuidgid abc /app/openvpn.sh
+    /app/openvpn.sh
 else
-    exec s6-setuidgid abc /app/openvpn.sh ${RUN_OPTS}
+    /app/openvpn.sh ${RUN_OPTS}
 fi
 
 
