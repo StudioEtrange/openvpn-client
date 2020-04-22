@@ -293,13 +293,21 @@ while read i; do
     eval vpnportforward $(sed 's/^/"/; s/$/"/; s/;/" "/g' <<< $i)
 done < <(env | awk '/^VPNPORT[0-9=_]/ {sub (/^[^=]*=/, "", $0); print}')
 
-while getopts ":hc:df:a:m:o:p:R:r:v:" opt; do
+while getopts ":hc:dfa:m:o:p:R:r:v:" opt; do
     case "$opt" in
         h) usage ;;
         a) eval vpn_auth $(sed 's/^/"/; s/$/"/; s/;/" "/g' <<< $OPTARG) ;;
         c) cert_auth "$OPTARG" ;;
         d) dns ;;
-        f) firewall "$OPTARG"; touch $route $route6 ;;
+        f) eval nextopt=\${$OPTIND}
+            if [[ -n $nextopt && $nextopt != -* ]] ; then
+                OPTIND=$((OPTIND + 1))
+                firewall "$nextopt"
+            else
+                firewall
+            fi
+            touch $route $route6
+            ;;
         m) MSS="$OPTARG" ;;
         o) OTHER_ARGS="$OPTARG" ;;
         p) eval vpnportforward $(sed 's/^/"/; s/$/"/; s/;/" "/g' <<< $OPTARG) ;;
