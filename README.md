@@ -114,7 +114,8 @@ the second container (that's what `--net=container:vpn` does).
         -d          Use the VPN provider's DNS resolvers
         -f '[port]' Firewall rules so that only the VPN and DNS are allowed to
                     send internet traffic (IE if VPN is down it's offline)
-                    optional arg: [port] to use, instead of default
+                    optional arg: 
+                    [port] vpn port to use, empty or '1' means auto detect
         -m '<mss>'  Maximum Segment Size <mss>
                     required arg: '<mss>'
         -o '<args>' Allow to pass any arguments directly to openvpn
@@ -227,13 +228,19 @@ Full configuration with only cert ca file provided. VPN conf will be generated
 
 ### Firewall
 
-It's just a simple command line argument (`-f ""`) to turn on the firewall, and
-block all outbound traffic if the VPN is down.
+It's just a simple command line argument (`-f`) or env var `FIREWALL=1` 
+to turn on the firewall, and block all outbound traffic if the VPN is down.
 
     sudo cp /path/to/vpn.crt /some/path/vpn-ca.crt
     sudo docker run -it --cap-add=NET_ADMIN --device /dev/net/tun --name vpn \
-                -v /some/path:/vpn -d dperson/openvpn-client -f "" \
+                -v /some/path:/vpn -d dperson/openvpn-client -f  \
                 -v 'vpn.server.name;username;password'
+
+**NOTE**: a process which have GID of vpn group defined at image creation or at 
+runtime by env var `GROUPID` is always authorized to pass through firewall
+
+**NOTE 2**: an empty value or for `1` means vpn port auto defection from conf or
+default port. You can specify a port value (`-f=3194` or `FIREWALL=3194`)
 
 ### DNS Issues (May Look Like You Can't Connect To Anything)
 

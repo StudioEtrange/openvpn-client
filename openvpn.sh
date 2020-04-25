@@ -48,16 +48,21 @@ dns() {
 
 ### firewall: firewall all output not DNS/VPN that's not over the VPN connection
 # Arguments:
-#   port) optional port that will be used to connect to VPN (should auto detect)
+#   port) optional port that will be used to connect to VPN. Empty or "1" as value
+#         means default value or auto detect if port is defined in conf
 # Return: configured firewall
-firewall() { local port="${1:-1194}" docker_network="$(ip -o addr show dev eth0|
+firewall() { local port="${1}" docker_network="$(ip -o addr show dev eth0|
             awk '$3 == "inet" {print $4}')" network \
             docker6_network="$(ip -o addr show dev eth0 |
             awk '$3 == "inet6" {print $4; exit}')"
-    [[ -z "${1:-""}" && -r $conf ]] &&
-        port="$(awk '/^remote / && NF ~ /^[0-9]*$/ {print $NF}' $conf |
-                    grep ^ || echo 1194)"
-
+    if [[ -z "${1:-""}" || -z "${1:-""}" = "1" ]]; then
+        if [[ -r $conf ]]; then
+            port="$(awk '/^remote / && NF ~ /^[0-9]*$/ {print $NF}' $conf |
+                        grep ^ || echo 1194)"
+        else
+            port="1194"
+        fi
+    fi
     ip6tables -F 2>/dev/null
     ip6tables -X 2>/dev/null
     ip6tables -P INPUT DROP 2>/dev/null
@@ -258,7 +263,8 @@ Options (fields in '[]' are optional, '<>' are required):
     -d          Use the VPN provider's DNS resolvers
     -f '[port]' Firewall rules so that only the VPN and DNS are allowed to
                 send internet traffic (IE if VPN is down it's offline)
-                optional arg: [port] to use, instead of default
+                optional arg:
+                [port] vpn port to use, empty or '1' means auto detect
     -m '<mss>'  Maximum Segment Size <mss>
                 required arg: '<mss>'
     -o '<args>' Allow to pass any arguments directly to openvpn
@@ -324,13 +330,21 @@ while read i; do
     eval vpnportforward $(sed 's/^/"/; s/$/"/; s/;/" "/g' <<< $i)
 done < <(env | awk '/^VPNPORT[0-9=_]/ {sub (/^[^=]*=/, "", $0); print}')
 
-while getopts ":hc:df:a:m:o:p:R:r:v:V:" opt; do
+while getopts ":hc:dfa:m:o:p:R:r:v:V:" opt; do
     case "$opt" in
         h) usage ;;
         a) eval vpn_auth $(sed 's/^/"/; s/$/"/; s/;/" "/g' <<< $OPTARG) ;;
         c) do_cert_auth="$OPTARG" ;;
         d) do_dns="1" ;;
-        f) do_firewall="$OPTARG"; touch $route $route6 ;;
+        f) eval nextopt=\${$OPTIND}
+            if [[ -n $nextopt && $nextopt != -* ]] ; then
+                OPTIND=$((OPTIND + 1))
+                do_firewall="$nextopt"
+            else
+                do_firewall="1"
+            fi
+            touch $route $route6
+            ;;
         m) MSS="$OPTARG" ;;
         o) OTHER_ARGS="$OPTARG" ;;
         p) eval vpnportforward $(sed 's/^/"/; s/$/"/; s/;/" "/g' <<< $OPTARG) ;;
