@@ -47,16 +47,21 @@ dns() {
 
 ### firewall: firewall all output not DNS/VPN that's not over the VPN connection
 # Arguments:
-#   port) optional port that will be used to connect to VPN (should auto detect)
+#   port) optional port that will be used to connect to VPN. Empty or "1" as value
+#         means default value or auto detect if port is defined in conf
 # Return: configured firewall
-firewall() { local port="${1:-1194}" docker_network="$(ip -o addr show dev eth0|
+firewall() { local port="${1}" docker_network="$(ip -o addr show dev eth0|
             awk '$3 == "inet" {print $4}')" network \
             docker6_network="$(ip -o addr show dev eth0 |
             awk '$3 == "inet6" {print $4; exit}')"
-    [[ -z "${1:-""}" && -r $conf ]] &&
-        port="$(awk '/^remote / && NF ~ /^[0-9]*$/ {print $NF}' $conf |
-                    grep ^ || echo 1194)"
-
+    if [[ -z "${1:-""}" || -z "${1:-""}" = "1" ]]; then
+        if [[ -r $conf ]]; then
+            port="$(awk '/^remote / && NF ~ /^[0-9]*$/ {print $NF}' $conf |
+                        grep ^ || echo 1194)"
+        else
+            port="1194"
+        fi
+    fi
     ip6tables -F 2>/dev/null
     ip6tables -X 2>/dev/null
     ip6tables -P INPUT DROP 2>/dev/null
@@ -234,7 +239,8 @@ Options (fields in '[]' are optional, '<>' are required):
     -d          Use the VPN provider's DNS resolvers
     -f '[port]' Firewall rules so that only the VPN and DNS are allowed to
                 send internet traffic (IE if VPN is down it's offline)
-                optional arg: [port] to use, instead of default
+                optional arg:
+                [port] vpn port to use, empty or '1' means auto detect
     -m '<mss>'  Maximum Segment Size <mss>
                 required arg: '<mss>'
     -o '<args>' Allow to pass any arguments directly to openvpn
