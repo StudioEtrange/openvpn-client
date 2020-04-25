@@ -172,7 +172,8 @@ ENVIRONMENT VARIABLES
  * `VPNPORT` - As above (-p) setup port forwarding (See NOTE below)
  * `GROUPID` - Set the GID for the vpn
 
- **NOTE**: optionally supports additional variables starting with the same name,
+ **NOTE**: `ROUTE6`, `ROUTE` and `VPNPORT` optionally supports additional variables 
+ starting with the same name. 
  IE `VPNPORT` also will work for `VPNPORT_2`, `VPNPORT_3`... `VPNPORT_x`, etc.
 
 ## Examples
