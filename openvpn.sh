@@ -54,7 +54,7 @@ firewall() { local port="${1}" docker_network="$(ip -o addr show dev eth0|
             awk '$3 == "inet" {print $4}')" network \
             docker6_network="$(ip -o addr show dev eth0 |
             awk '$3 == "inet6" {print $4; exit}')"
-    if [[ -z "${1:-""}" || -z "${1:-""}" = "1" ]]; then
+    if [[ -z "${1:-""}" || "${1:-""}" = "1" ]]; then
         if [[ -r $conf ]]; then
             port="$(awk '/^remote / && NF ~ /^[0-9]*$/ {print $NF}' $conf |
                         grep ^ || echo 1194)"
