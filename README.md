@@ -59,29 +59,43 @@ Once it's up other containers can be started using its network connection:
 However to access them from your normal network (off the 'local' docker bridge),
 you'll also need to run a web proxy, like so:
 
+    sudo docker network create vpnnet
+    sudo docker run -it --cap-add=NET_ADMIN --device /dev/net/tun --name vpn \
+            --network vpnnet -v /some/path:/vpn -d dperson/openvpn-client \
+            -v 'vpn.server.name;username;password'
+
     sudo docker run -it --name web -p 80:80 -p 443:443 \
-                --link vpn:<service_name> -d dperson/nginx \
-                -w "http://<service_name>:<PORT>/<URI>;/<PATH>"
+            --network vpnnet --link vpn:<service_name> \
+            -d dperson/nginx -w "http://<service_name>:<PORT>/<URI>;/<PATH>"
 
 Which will start a Nginx web server on local ports 80 and 443, and proxy any
 requests under `/<PATH>` to the to `http://<service_name>:<PORT>/<URI>`. To use
 a concrete example:
 
-    sudo docker run -it --name bit --net=container:vpn -d dperson/transmission
-    sudo docker run -it --name web -p 80:80 -p 443:443 --link vpn:bit \
-                -d dperson/nginx -w "http://bit:9091/transmission;/transmission"
+    sudo docker run -it --name bit --net=container:vpn \
+            -e TRUSER=user -e TRPASSWD=user -d dperson/transmission
+    sudo docker run -it --name web -p 80:80 -p 443:443 \
+            --network vpnnet --link vpn:bit \
+            -d dperson/nginx -w "http://bit:9091/transmission;/transmission"
 
 For multiple services (non-existant 'foo' used as an example):
 
-    sudo docker run -it --name bit --net=container:vpn -d dperson/transmission
+    sudo docker run -it --name bit --net=container:vpn \
+            -e TRUSER=user -e TRPASSWD=user -d dperson/transmission
     sudo docker run -it --name foo --net=container:vpn -d dperson/foo
-    sudo docker run -it --name web -p 80:80 -p 443:443 --link vpn:bit \
-                --link vpn:foo -d dperson/nginx \
-                -w "http://bit:9091/transmission;/transmission" \
-                -w "http://foo:8000/foo;/foo"
+    sudo docker run -it --name web -p 80:80 -p 443:443 \
+            --link vpn:bit --link vpn:foo \
+            --network vpnnet -d dperson/nginx \
+            -w "http://bit:9091/transmission;/transmission" \
+            -w "http://foo:8000/foo;/foo"
+
+**NOTE**: `--link` is a legacy docker feature and should be replaced by `--network`
+to connect container each other. But we also need to create a DNS alias on `vpn`
+container with each service name. Which is what `--link` do (among other things).
 
 ## Routing for local access to non HTTP proxy-able ports
 
+Allow access from your local docker host network to vpn container.
 The argument to the `-r` (route) command line argument must be your local
 network that you would connect to the server running the docker containers on.
 Running the following on your docker host should give you the correct network:
